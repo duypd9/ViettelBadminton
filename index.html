@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viettel VTT Badminton - Tournament Portal</title>
+    <title>Viettel Badminton - Tournament Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700;900&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
@@ -16,28 +16,10 @@
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
         /* Styles chung */
-      <header class="dynamic-bg rounded-b-[3rem] shadow-2xl mb-8 p-8 md:p-12 text-center text-white relative z-10">
-    <div id="back-btn-container" class="hidden mb-6 flex justify-start">
-        <a href="#" id="back-link" class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-[10px] font-bold transition w-fit backdrop-blur-sm border border-white/10 uppercase tracking-wider">
-            &larr; Về danh sách
-        </a>
-    </div>
-
-    <div class="flex flex-col items-center mb-6">
-        <div class="flex items-baseline space-x-2 bg-white/10 px-6 py-2 rounded-full backdrop-blur-md border border-white/10">
-            <span class="oswald font-black text-2xl tracking-tighter">VIETTEL</span>
-            <span class="oswald font-light text-2xl tracking-wide opacity-90 uppercase">Software</span>
-        </div>
-    </div>
-    
-    <h1 class="text-5xl md:text-7xl oswald font-black uppercase italic glow-text tracking-tighter leading-none">
-        GIẢI CẦU LÔNG
-    </h1>
-    
-    <div id="display-tournament-name" class="mt-4 bg-yellow-400 text-black px-6 py-1.5 font-black text-sm md:text-base rounded shadow-lg inline-block uppercase tracking-widest">
-        ĐÔI NAM 2026
-    </div>
-</header>
+        .header-gradient { background: linear-gradient(135deg, #ee0000 0%, #c20000 50%, #990000 100%); }
+        .header-pattern { background-image: radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.05) 1px, transparent 0); background-size: 24px 24px; }
+        .glass-badge { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
         
         /* Styles cho Relay Format */
         .win-glow { box-shadow: 0 0 15px rgba(34, 197, 94, 0.4); border-color: #22c55e !important; }
@@ -126,7 +108,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Tên Giải Đấu <span class="text-red-500">*</span></label>
-                        <input type="text" id="new-t-name" placeholder="VD: Giải Cầu Lông VTT Mùa Hè..." class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-red-500 outline-none font-bold text-slate-800 transition-colors">
+                        <input type="text" id="new-t-name" placeholder="VD: Giải Cầu Lông Mùa Hè..." class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-red-500 outline-none font-bold text-slate-800 transition-colors">
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Thời gian tổ chức</label>
