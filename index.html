@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viettel VTT Badminton - Tournament Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700;900&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        /* Styles chung */
+       <!-- Header Section -->
+        <header class="dynamic-bg rounded-3xl shadow-2xl mb-12 p-8 md:p-12 text-center text-white">
+            <div class="flex flex-col items-center mb-6">
+                <div class="flex items-baseline space-x-2 bg-white/10 px-6 py-2 rounded-full backdrop-blur-md">
+                    <span class="oswald font-black text-2xl tracking-tighter">VIETTEL</span>
+                    <span class="oswald font-light text-2xl tracking-wide opacity-90">SOFTWARE</span>
+                </div>
+            </div>
+            <h1 class="text-5xl md:text-8xl oswald font-black uppercase italic glow-text tracking-tighter">GIẢI CẦU LÔNG</h1>
+            <div class="mt-4 bg-yellow-400 text-black px-4 py-1 font-black text-sm rounded shadow-lg inline-block">ĐÔI NAM 2026</div>
+        </header>
+        
+        /* Styles cho Relay Format */
+        .win-glow { box-shadow: 0 0 15px rgba(34, 197, 94, 0.4); border-color: #22c55e !important; }
+        .live-indicator { display: inline-flex; align-items: center; padding: 2px 8px; background: #fef2f2; color: #dc2626; border-radius: 99px; font-size: 10px; font-weight: 800; }
+        .dot { height: 6px; width: 6px; background-color: #dc2626; border-radius: 50%; display: inline-block; margin-right: 5px; animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(220, 38, 38, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        .podium-card { background: linear-gradient(to bottom, #ffffff, #fdfbfb); transition: all 0.3s ease; }
+        .podium-winner-text { background: linear-gradient(to right, #ee0000, #990000); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* Styles cho Round Robin Format */
+        .oswald { font-family: 'Oswald', sans-serif; }
+        .rr-card-glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .rr-score-input { width: 45px; height: 35px; background: #fff5f5; color: #ee0000; text-align: center; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 700; border: 1px solid #fee2e2; outline: none; transition: all 0.2s; }
+        .rr-score-input:focus { background: white; border-color: #ee0000; box-shadow: 0 0 0 2px rgba(238, 0, 0, 0.1); }
+        .rr-score-input-sf { width: 32px; height: 32px; background: #f8fafc; color: #0f172a; text-align: center; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; border: 1px solid #cbd5e1; outline: none; transition: all 0.2s; }
+        .rr-score-input-sf:focus { background: white; border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); }
+        .rr-score-input-final { width: 38px; height: 38px; background: #ee0000; color: white; text-align: center; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 700; border: none; outline: none; transition: all 0.2s; }
+        .rr-score-input-final:focus { background: #b30000; box-shadow: 0 0 0 3px rgba(238, 0, 0, 0.2); }
+        .rr-score-input-bronze { width: 38px; height: 38px; background: #b45309; color: white; text-align: center; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 700; border: none; outline: none; transition: all 0.2s; }
+        .rr-score-input-bronze:focus { background: #92400e; box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.2); }
+        .rr-player-tag { border-left: 4px solid transparent; transition: all 0.2s; }
+        .rr-player-tag.active { border-left-color: #ee0000; background: white; }
+        .rr-round-badge { background: #f87171; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .rr-rank-pos { font-size: 0.65rem; color: #94a3b8; font-weight: 800; margin-bottom: -2px; }
+    </style>
+</head>
+<body class="text-slate-900 pb-12">
+
+    <header class="header-gradient text-white relative overflow-hidden shadow-2xl">
+        <div class="absolute inset-0 header-pattern opacity-40"></div>
+        <div class="max-w-6xl mx-auto px-6 py-8 md:py-10 relative z-10">
+            <div id="back-btn-container" class="hidden mb-6">
+                <a href="#" id="back-link" class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-xs font-bold transition w-fit backdrop-blur-sm border border-white/20">
+                    &larr; VỀ DANH SÁCH GIẢI
+                </a>
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <div id="ranking-icon-container" class="hidden glass-badge p-2 rounded-xl cursor-pointer hover:bg-white/30 transition shadow-lg" onclick="toggleRankingModal()">
+                            <svg class="w-8 h-8 text-yellow-400 drop-shadow-md" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18 2H6c-1.1 0-2 .9-2 2v2c0 2.21 1.79 4 4 4h1v2c0 2.12 1.34 4.07 3.23 4.69l-.73 1.81c-.26.65.22 1.34.92 1.34h3.16c.7 0 1.18-.69.92-1.34l-.73-1.81C17.66 16.07 19 14.12 19 12v-2h1c2.21 0 4-1.79 4-4V4c0-1.1-.9-2-2-2zm-12 4V4h2v4H7c-.55 0-1-.45-1-1zm12 1c0 .55-.45 1-1 1h-1V4h2v2z" />
+                            </svg>
+                        </div>
+                        <h1 class="text-2xl md:text-4xl font-black italic tracking-tighter uppercase leading-none">
+                            Viettel TELECOM<br />
+                            <span id="header-subtitle" class="text-white/90 font-extrabold not-italic text-lg md:text-2xl tracking-normal">Tournament Portal</span>
+                        </h1>
+                    </div>
+                </div>
+                <div id="header-badge" class="glass-badge px-4 py-2 rounded-2xl text-right">
+                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-white/80">Hệ Thống Quản Lý</p>
+                    <p class="text-sm font-bold text-yellow-300">Live Scoring Systems</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="dashboard-view" class="max-w-4xl mx-auto p-4 mt-6 hidden">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-black uppercase tracking-tighter text-slate-800">Danh Sách Giải Đấu</h2>
+            <div id="admin-actions" class="hidden flex gap-2">
+                <button onclick="showCreateForm()" class="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 shadow uppercase tracking-wider">
+                    + Tạo giải đấu mới
+                </button>
+            </div>
+        </div>
+        <div id="tournament-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="text-center py-12 text-slate-400 font-medium col-span-full">Đang tải dữ liệu...</div>
+        </div>
+    </main>
+
+    <main id="create-tournament-view" class="max-w-4xl mx-auto p-4 mt-6 hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+            <div class="bg-slate-50 border-b border-slate-100 p-6 flex items-center gap-3">
+                <div class="w-1.5 h-6 bg-red-600 rounded-full"></div>
+                <h2 class="text-xl font-black uppercase text-slate-800 tracking-tighter">Khởi tạo Giải đấu mới</h2>
+            </div>
+            
+            <div class="p-8 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Tên Giải Đấu <span class="text-red-500">*</span></label>
+                        <input type="text" id="new-t-name" placeholder="VD: Giải Cầu Lông VTT Mùa Hè..." class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-red-500 outline-none font-bold text-slate-800 transition-colors">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Thời gian tổ chức</label>
+                        <input type="text" id="new-t-date" placeholder="VD: Tháng 5/2026" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-red-500 outline-none font-bold text-slate-800 transition-colors">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Thể thức thi đấu <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="t-format" value="relay" class="peer sr-only" checked onclick="renderGroupConfigOnChange()">
+                            <div class="p-4 rounded-xl border-2 border-slate-200 peer-checked:border-red-500 peer-checked:bg-red-50 transition-all text-center">
+                                <div class="font-black text-slate-800 uppercase tracking-tight mb-1">Đồng đội tiếp sức</div>
+                                <div class="text-[10px] text-slate-500 font-bold">4 Thành viên/Đội (Chạm 21-42 điểm)</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="t-format" value="round_robin" class="peer sr-only" onclick="renderGroupConfigOnChange()">
+                            <div class="p-4 rounded-xl border-2 border-slate-200 peer-checked:border-red-500 peer-checked:bg-red-50 transition-all text-center">
+                                <div class="font-black text-slate-800 uppercase tracking-tight mb-1">Vòng tròn tính điểm</div>
+                                <div class="text-[10px] text-slate-500 font-bold">2 Thành viên/Đôi (Bo3)</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="rr-cat-selector" class="hidden space-y-3 mt-2 p-5 bg-slate-50 border border-slate-200 rounded-xl">
+                    <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Chọn Nội Dung Thi Đấu <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-6">
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Đôi Nam" class="cat-checkbox w-4 h-4 text-red-600" checked onchange="toggleCat('Đôi Nam', this.checked)"><span class="font-bold text-sm">Đôi Nam</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Đôi Nữ" class="cat-checkbox w-4 h-4 text-red-600" onchange="toggleCat('Đôi Nữ', this.checked)"><span class="font-bold text-sm">Đôi Nữ</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Đôi Nam Nữ" class="cat-checkbox w-4 h-4 text-red-600" onchange="toggleCat('Đôi Nam Nữ', this.checked)"><span class="font-bold text-sm">Đôi Nam Nữ</span></label>
+                    </div>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <div class="space-y-4">
+                    <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Danh sách Đội & Thành viên thi đấu <span class="text-red-500">*</span></label>
+                    <div id="dynamic-groups-container" class="grid grid-cols-1 w-full">
+                        </div>
+                </div>
+
+                <div class="pt-6 flex gap-3">
+                    <button onclick="submitNewTournament()" class="flex-1 py-4 bg-red-600 text-white font-black text-sm uppercase tracking-widest rounded-xl hover:bg-red-700 transition shadow-lg">Tạo & Tự Động Xếp Lịch</button>
+                    <button onclick="location.reload()" class="px-8 py-4 bg-slate-100 text-slate-600 font-bold uppercase tracking-widest rounded-xl hover:bg-slate-200 transition">Hủy</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <main id="relay-detail-view" class="max-w-4xl mx-auto p-4 space-y-6 mt-4 hidden">
+        <div id="nav-slots" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"></div>
+        <div id="relay-content-area" class="space-y-6"></div>
+        <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-1.5 h-6 bg-red-600 rounded-full"></div>
+                    <h3 class="font-black text-slate-900 uppercase tracking-tighter text-xl">Xếp Hạng Vòng Bảng</h3>
+                </div>
+                <div id="relay-live-status-indicator" class="live-indicator uppercase tracking-widest">
+                    <span class="dot"></span> Trực tuyến
+                </div>
+            </div>
+            <div id="relay-standings-tables" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+        </div>
+    </main>
+
+    <main id="round-robin-detail-view" class="max-w-6xl mx-auto p-4 mt-4 hidden">
+        
+        <div id="rr-category-tabs" class="flex gap-3 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+            </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-4 space-y-6" id="rr-rankings-container">
+                </div>
+
+            <div class="lg:col-span-8 space-y-8">
+                <div class="rr-card-glass rounded-2xl overflow-hidden">
+                    <div class="p-5 bg-white border-b flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <h3 class="oswald text-2xl font-black text-red-600 uppercase italic">Lịch thi đấu & Kết quả</h3>
+                        </div>
+                        <div id="rr-live-status-indicator" class="live-indicator uppercase tracking-widest">
+                            <span class="dot"></span> Trực tuyến
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-8 bg-slate-50" id="rr-match-list-container"></div>
+                </div>
+
+                <div class="rr-card-glass rounded-2xl p-6 bg-gradient-to-br from-white to-gray-50 border-t-4 border-red-600 shadow-sm">
+                    <h3 class="oswald text-2xl font-black text-gray-800 uppercase italic mb-8 border-b-2 border-red-600 inline-block">Vòng Knock-out & Bảng Vàng</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-6">
+                            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-600 border border-gray-100">
+                                <div class="text-[10px] font-black text-red-700 mb-3 uppercase flex justify-between items-center">
+                                    <span>Bán Kết 1</span>
+                                    <span class="text-[8px] bg-red-100 px-2 py-0.5 rounded text-red-600" id="sf1-rule-label">Nhất A - Nhì B</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center border-b border-gray-50 pb-2">
+                                        <span id="sf1-team1-label" class="text-[11px] font-bold text-gray-500 italic break-words w-1/2 pr-2">...</span>
+                                        <div class="flex space-x-1 shrink-0">
+                                            <div id="rr-sf1-set1-t1-container"></div>
+                                            <div id="rr-sf1-set2-t1-container"></div>
+                                            <div id="rr-sf1-set3-t1-container"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span id="sf1-team2-label" class="text-[11px] font-bold text-gray-500 italic break-words w-1/2 pr-2">...</span>
+                                        <div class="flex space-x-1 shrink-0">
+                                            <div id="rr-sf1-set1-t2-container"></div>
+                                            <div id="rr-sf1-set2-t2-container"></div>
+                                            <div id="rr-sf1-set3-t2-container"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-slate-800 border border-gray-100">
+                                <div class="text-[10px] font-black text-slate-800 mb-3 uppercase flex justify-between items-center">
+                                    <span>Bán Kết 2</span>
+                                    <span class="text-[8px] bg-slate-100 px-2 py-0.5 rounded text-slate-600" id="sf2-rule-label">Nhất B - Nhì A</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center border-b border-gray-50 pb-2">
+                                        <span id="sf2-team1-label" class="text-[11px] font-bold text-gray-500 italic break-words w-1/2 pr-2">...</span>
+                                        <div class="flex space-x-1 shrink-0">
+                                            <div id="rr-sf2-set1-t1-container"></div>
+                                            <div id="rr-sf2-set2-t1-container"></div>
+                                            <div id="rr-sf2-set3-t1-container"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span id="sf2-team2-label" class="text-[11px] font-bold text-gray-500 italic break-words w-1/2 pr-2">...</span>
+                                        <div class="flex space-x-1 shrink-0">
+                                            <div id="rr-sf2-set1-t2-container"></div>
+                                            <div id="rr-sf2-set2-t2-container"></div>
+                                            <div id="rr-sf2-set3-t2-container"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col justify-start">
+                            <div class="bg-red-600 p-1 rounded-2xl shadow-xl">
+                                <div class="bg-[#fecaca] rounded-[14px] p-6 text-center border-2 border-white/50">
+                                    <div class="oswald text-red-700 text-3xl font-black mb-2 italic drop-shadow-sm">CHUNG KẾT</div>
+                                    <div class="my-6 space-y-6">
+                                        <div class="text-sm font-black uppercase text-gray-900 leading-tight min-h-[24px] break-words px-4" id="final-t1">Thắng BK1</div>
+                                        <div class="flex flex-col space-y-4">
+                                            <div class="flex items-center justify-center space-x-2">
+                                                <div class="flex flex-col items-center">
+                                                    <span class="text-[9px] font-bold text-red-800 uppercase mb-1">Set 1</span>
+                                                    <div id="rr-f-set1-t1-container"></div>
+                                                </div>
+                                                <div class="flex flex-col items-center">
+                                                    <span class="text-[9px] font-bold text-red-800 uppercase mb-1">Set 2</span>
+                                                    <div id="rr-f-set2-t1-container"></div>
+                                                </div>
+                                                <div class="flex flex-col items-center">
+                                                    <span class="text-[9px] font-bold text-red-800 uppercase mb-1">Set 3</span>
+                                                    <div id="rr-f-set3-t1-container"></div>
+                                                </div>
+                                            </div>
+                                            <div class="h-0.5 bg-red-400/40 mx-8 rounded-full"></div>
+                                            <div class="flex items-center justify-center space-x-2">
+                                                <div id="rr-f-set1-t2-container"></div>
+                                                <div id="rr-f-set2-t2-container"></div>
+                                                <div id="rr-f-set3-t2-container"></div>
+                                            </div>
+                                        </div>
+                                        <div class="text-sm font-black uppercase text-gray-900 leading-tight min-h-[24px] break-words px-4" id="final-t2">Thắng BK2</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="rr-podium-container" class="mt-10"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="ranking-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm p-4 md:p-8 flex-col items-center justify-center transition-all">
+        <div class="bg-white rounded-[2rem] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-slate-200">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-1.5 h-6 bg-red-600 rounded-full"></div>
+                    <h2 class="text-xl font-black uppercase text-slate-800 tracking-tighter">Hệ Thống Rank & Quy Định Chấp Cầu</h2>
+                </div>
+                <button onclick="toggleRankingModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-600 text-slate-500 font-bold transition">✕</button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[#f8f9fa]">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-8 space-y-3">
+                        <div class="flex justify-end gap-4 text-[11px] font-black uppercase tracking-widest mb-2">
+                            <span class="text-slate-800">• GVM</span>
+                            <span class="text-red-600">• CNTT</span>
+                            <span class="text-blue-600">• Ngoài VTT</span>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-800 text-white text-[11px] font-black uppercase tracking-widest">
+                                    <tr><th class="px-4 py-3 border-r border-slate-700">Tên Hạng</th><th class="px-4 py-3 border-r border-slate-700 w-16 text-center">Rank</th><th class="px-4 py-3">Danh sách Vợt thủ</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 font-medium">
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 font-bold border-r border-slate-100">Phong trào</td><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black">1</td><td class="px-4 py-2 flex flex-wrap gap-3"><span class="text-red-600 font-bold">Anhnt162</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td rowspan="3" class="px-4 py-2 font-bold border-r border-slate-100 align-top">Tốt</td><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black">4</td><td class="px-4 py-2 flex flex-wrap gap-3"><span>Gianglq</span><span>Vinhhv4</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black border-t border-slate-100">5</td><td class="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-3"><span>Tiemdt</span><span>Huydt77</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black border-t border-slate-100">6</td><td class="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-3"><span>Ducna18</span><span>Hainv102</span><span class="text-red-600 font-bold">Namlt24</span><span>Tuanvv6</span></td></tr>
+                                    <tr class="hover:bg-slate-50 border-t-2 border-slate-200"><td rowspan="2" class="px-4 py-2 font-bold border-r border-slate-100 align-top">Khá</td><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black">7</td><td class="px-4 py-2 flex flex-wrap gap-3"><span class="text-red-600 font-bold">Duynq7</span><span>Tuannq11</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black border-t border-slate-100">8</td><td class="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-3"><span>Duypd9</span><span>Hungnn146</span><span class="text-blue-600 font-bold">Sangnn11</span><span>Giangnt165</span><span class="text-red-600 font-bold">Thongnv31</span><span class="text-red-600 font-bold">Soncn2</span><span class="text-red-600 font-bold">Hungnvsx</span><span class="text-red-600 font-bold">Tanpn11</span></td></tr>
+                                    <tr class="hover:bg-slate-50 border-t-2 border-slate-200"><td rowspan="3" class="px-4 py-2 font-bold border-r border-slate-100 align-top">Trung bình</td><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black">10</td><td class="px-4 py-2 flex flex-wrap gap-3"><span>Tungnht3</span><span>Vuha13</span><span class="text-red-600 font-bold">Tannm27</span><span class="text-red-600 font-bold">Linhnt223</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black border-t border-slate-100">11</td><td class="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-3"><span>Hoangnv294</span><span>Tuanld12</span><span class="text-red-600 font-bold">Minhltt</span><span>Loctv4</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black border-t border-slate-100">12</td><td class="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-3"><span>Dungla18</span><span>Quandd7</span><span>Quangnv58</span><span>Lamht2</span><span>Anhhtv1</span><span>Hunglm35</span></td></tr>
+                                    <tr class="hover:bg-slate-50 border-t-2 border-slate-200"><td rowspan="3" class="px-4 py-2 font-bold border-r border-slate-100 align-top">Biết chơi</td><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black">13</td><td class="px-4 py-2 flex flex-wrap gap-3"><span>Phuonghv2</span><span>Hangnt215</span><span>Hainv107</span><span>Truongnd34</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black border-t border-slate-100">14</td><td class="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-3"><span>Anhhtt11</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black border-t border-slate-100">15</td><td class="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-3"><span>Thoant35</span><span>Huongdm4</span><span class="text-red-600 font-bold">Vanvttv</span><span class="text-red-600 font-bold">Hienctt</span><span>Nguyennd14</span></td></tr>
+                                    <tr class="hover:bg-slate-50 border-t-2 border-slate-200"><td rowspan="3" class="px-4 py-2 font-bold border-r border-slate-100 align-top">Mới cầm vợt</td><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black">19</td><td class="px-4 py-2 flex flex-wrap gap-3"><span>Thientq5</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black border-t border-slate-100">20</td><td class="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-3"><span>Vannt114</span></td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-4 py-2 text-center border-r border-slate-100 bg-slate-50 font-black border-t border-slate-100">21</td><td class="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-3"><span>Nghiapd8</span><span>Hoaidtt4</span><span>Phuongnt40</span><span>Anhmnq1</span><span>Vyanh21</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-4 space-y-4">
+                        <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-2xl shadow-sm text-sm space-y-3">
+                            <h4 class="font-black text-red-600 uppercase tracking-tighter flex items-center gap-2">CÔNG THỨC TÍNH</h4>
+                            <p class="font-bold text-slate-800 leading-relaxed">Giả sử cặp VĐV A/B đấu với cặp VĐV X/Y thì: <br /><span class="text-red-600 bg-white px-2 py-1 rounded border border-red-100 inline-block mt-2">Kênh bậc = (A + B) - (X + Y)</span></p>
+                            <p class="font-bold text-red-600 text-xs uppercase text-center bg-red-100 py-1.5 rounded-lg mt-2">Đôi nào có tổng bậc cao hơn sẽ được chấp cầu!</p>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                            <table class="w-full text-sm text-center">
+                                <thead class="bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                                    <tr><th class="px-2 py-3 border-r border-slate-200 bg-yellow-50 text-slate-800">Kênh Bậc</th><th class="px-2 py-3 border-r border-slate-200">Chấp (Bo1 21)</th><th class="px-2 py-3">Chấp (Bo3 21)</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">0</td><td class="px-2 py-1.5 border-r border-slate-100">0</td><td class="px-2 py-1.5">0-0-0</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">1</td><td class="px-2 py-1.5 border-r border-slate-100">1</td><td class="px-2 py-1.5">1-1-1</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">2</td><td class="px-2 py-1.5 border-r border-slate-100">2</td><td class="px-2 py-1.5">2-2-2</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">3</td><td class="px-2 py-1.5 border-r border-slate-100">3</td><td class="px-2 py-1.5">3-3-3</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">4</td><td class="px-2 py-1.5 border-r border-slate-100">4</td><td class="px-2 py-1.5">4-4-4</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">5</td><td class="px-2 py-1.5 border-r border-slate-100">5</td><td class="px-2 py-1.5">5-5-5</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">6</td><td class="px-2 py-1.5 border-r border-slate-100">6</td><td class="px-2 py-1.5">6-6-6</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">7</td><td class="px-2 py-1.5 border-r border-slate-100">7</td><td class="px-2 py-1.5">7-7-7</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">8</td><td class="px-2 py-1.5 border-r border-slate-100">8</td><td class="px-2 py-1.5">8-8-8</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">9</td><td class="px-2 py-1.5 border-r border-slate-100">9</td><td class="px-2 py-1.5">9-9-9</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">10</td><td class="px-2 py-1.5 border-r border-slate-100">10</td><td class="px-2 py-1.5">10-10-10</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">11</td><td class="px-2 py-1.5 border-r border-slate-100">11</td><td class="px-2 py-1.5">11-11-11</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">12</td><td class="px-2 py-1.5 border-r border-slate-100">12</td><td class="px-2 py-1.5">12-12-12</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">13</td><td class="px-2 py-1.5 border-r border-slate-100">13</td><td class="px-2 py-1.5">13-13-13</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">14</td><td class="px-2 py-1.5 border-r border-slate-100">14</td><td class="px-2 py-1.5">14-14-14</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">15</td><td class="px-2 py-1.5 border-r border-slate-100">14</td><td class="px-2 py-1.5">14-14-14</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">16</td><td class="px-2 py-1.5 border-r border-slate-100">15</td><td class="px-2 py-1.5">15-15-15</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">17</td><td class="px-2 py-1.5 border-r border-slate-100">15</td><td class="px-2 py-1.5">15-15-15</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">18</td><td class="px-2 py-1.5 border-r border-slate-100">16</td><td class="px-2 py-1.5">16-16-16</td></tr>
+                                    <tr class="hover:bg-slate-50"><td class="px-2 py-1.5 font-black bg-slate-50 border-r border-slate-100">>= 19</td><td class="px-2 py-1.5 border-r border-slate-100">16</td><td class="px-2 py-1.5">16-16-16</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-tournament-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm p-4 md:p-8 flex-col items-center justify-center transition-all">
+        <div class="bg-white rounded-[2rem] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-slate-200">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-1.5 h-6 bg-red-600 rounded-full"></div>
+                    <h2 class="text-xl font-black uppercase text-slate-800 tracking-tighter">Chỉnh sửa thông tin giải</h2>
+                </div>
+                <button onclick="closeEditModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-600 text-slate-500 font-bold transition">✕</button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[#f8f9fa] space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Tên Giải Đấu</label>
+                        <input type="text" id="edit-t-name" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-red-500 outline-none font-bold text-slate-800">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Thời gian</label>
+                        <input type="text" id="edit-t-date" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-red-500 outline-none font-bold text-slate-800">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-black text-slate-500 uppercase tracking-widest">Trạng thái</label>
+                        <select id="edit-t-status" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-red-500 outline-none font-bold text-slate-800 cursor-pointer bg-white">
+                            <option value="active">Đang diễn ra</option>
+                            <option value="completed">Đã kết thúc</option>
+                        </select>
+                    </div>
+                </div>
+                <hr class="border-slate-200">
+                <div>
+                    <label class="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 block">Sửa tên Vận động viên / Thêm / Xóa Đội</label>
+                    <div id="edit-players-container" class="space-y-4"></div>
+                </div>
+            </div>
+            <div class="p-4 bg-white border-t border-slate-100 flex flex-wrap gap-3">
+                <button onclick="saveEditedTournament()" class="flex-1 py-3 bg-red-600 text-white font-black uppercase tracking-widest rounded-xl hover:bg-red-700 transition shadow-md">Lưu Thay Đổi & Xếp Lịch</button>
+                <button onclick="deleteTournament()" class="px-6 py-3 bg-slate-800 text-white font-black uppercase tracking-widest rounded-xl hover:bg-slate-900 transition shadow-md">🗑️ Xóa Giải</button>
+                <button onclick="closeEditModal()" class="px-6 py-3 bg-slate-100 text-slate-600 font-bold uppercase tracking-widest rounded-xl hover:bg-slate-200 transition">Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const isAdmin = urlParams.get('admin') === 'true';
+        const tid = urlParams.get('tid');
+
+        // CẤU HÌNH FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5dzxc5gH2vDwZdVpBsGAH7t3iEcA45gI",
+            authDomain: "vtt-badminton.firebaseapp.com",
+            databaseURL: "https://vtt-badminton-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "vtt-badminton",
+            storageBucket: "vtt-badminton.firebasestorage.app",
+            messagingSenderId: "181956276331",
+            appId: "1:181956276331:web:100f740b28802fb049012e",
+            measurementId: "G-GGVRW4502X"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let scores = {};
+        let currentSlotIdx = 0;
+        let PLAYER_NAMES = {};
+        let schedule = {}; 
+        let tournamentInfo = {};
+
+        // STATE CỦA FORM TẠO GIẢI ĐA NỘI DUNG
+        let formConfig = {
+            'Đôi Nam': { A: [ { members: ["", ""] }, { members: ["", ""] } ], B: [ { members: ["", ""] }, { members: ["", ""] } ] }
+        };
+        window.rrCategories = ['Đôi Nam'];
+        window.currentRRCat = 'Đôi Nam';
+
+        // TRẠNG THÁI TẠM THỜI KHI EDIT
+        let editConfig = {};
+        let currentEditCat = null;
+
+        function init() {
+            if (!tid) {
+                document.getElementById('dashboard-view').classList.remove('hidden');
+                document.getElementById('back-btn-container').classList.add('hidden');
+                document.getElementById('ranking-icon-container').classList.add('hidden');
+                document.getElementById('header-subtitle').innerText = "Tournament Portal";
+                if (isAdmin) document.getElementById('admin-actions').classList.remove('hidden');
+                loadDashboard();
+            } else {
+                document.getElementById('back-btn-container').classList.remove('hidden');
+                document.getElementById('back-link').href = isAdmin ? "?admin=true" : "?";
+                loadTournamentDetail(tid);
+            }
+        }
+
+        // ========================== DASHBOARD ==========================
+        function loadDashboard() {
+            database.ref('tournaments').on('value', (snapshot) => {
+                const data = snapshot.val();
+                const listContainer = document.getElementById('tournament-list');
+                if (!data) {
+                    listContainer.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500 bg-white rounded-2xl border">Hệ thống chưa có giải đấu nào.</div>`;
+                    return;
+                }
+                let html = '';
+                for (const key in data) {
+                    const t = data[key].info || {};
+                    const tName = t.name || 'Giải chưa đặt tên';
+                    const tDate = t.date || 'Chưa rõ ngày';
+                    const tStatus = t.status || 'unknown';
+                    const formatLabel = t.format === 'relay' ? 'Tiếp sức' : 'Vòng tròn';
+                    
+                    let statusBadge = '';
+                    if(tStatus === 'active') statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-1 rounded-md text-[10px] font-black uppercase"><span class="dot bg-green-500"></span> Đang diễn ra</span>`;
+                    else statusBadge = `<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-md text-[10px] font-black uppercase">Đã kết thúc</span>`;
+
+                    const link = `?tid=${key}${isAdmin ? '&admin=true' : ''}`;
+                    html += `
+                        <a href="${link}" class="block bg-white p-6 rounded-2xl border border-slate-200 card-shadow hover:border-red-300 transition-all group relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-slate-100 text-slate-400 text-[9px] font-bold px-2 py-1 rounded-bl-lg uppercase">${formatLabel}</div>
+                            <div class="flex justify-between items-start mb-4">
+                                ${statusBadge}
+                                <span class="text-slate-300 group-hover:text-red-500 transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </span>
+                            </div>
+                            <h3 class="text-lg font-black text-slate-800 uppercase tracking-tight mb-2 pr-10">${tName}</h3>
+                            <p class="text-xs font-bold text-slate-400">📅 ${tDate}</p>
+                        </a>
+                    `;
+                }
+                listContainer.innerHTML = html;
+            });
+        }
+
+        // ========================== EDIT TOURNAMENT MODAL ==========================
+        function openEditModal() {
+            document.getElementById('edit-tournament-modal').classList.remove('hidden');
+            document.getElementById('edit-tournament-modal').classList.add('flex');
+            
+            document.getElementById('edit-t-name').value = tournamentInfo.name || '';
+            document.getElementById('edit-t-date').value = tournamentInfo.date || '';
+            document.getElementById('edit-t-status').value = tournamentInfo.status || 'active';
+
+            // Khởi tạo state editConfig độc lập với dữ liệu gốc để thoải mái Thêm/Xóa trước khi bấm Lưu
+            editConfig = JSON.parse(JSON.stringify(PLAYER_NAMES || {}));
+            
+            if (tournamentInfo.format !== 'relay') {
+                let cats = window.rrCategories || [];
+                if (!currentEditCat && cats.length > 0) currentEditCat = cats[0];
+            }
+
+            renderEditPlayers();
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-tournament-modal').classList.add('hidden');
+            document.getElementById('edit-tournament-modal').classList.remove('flex');
+        }
+
+        function renderEditPlayers() {
+            let html = '';
+            const container = document.getElementById('edit-players-container');
+
+            if (tournamentInfo.format === 'relay') {
+                let groups = {};
+                Object.keys(editConfig).forEach(k => {
+                    let g = k.charAt(0);
+                    let t = k.substring(0, k.length - 1);
+                    if(!groups[g]) groups[g] = new Set();
+                    groups[g].add(t);
+                });
+                
+                Object.keys(groups).sort().forEach(g => {
+                    html += `<div class="bg-slate-50 p-4 rounded-xl mb-4 border border-slate-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <h5 class="font-black text-slate-800 uppercase">BẢNG ${g}</h5>
+                            <button type="button" onclick="addEditTeamRelay('${g}')" class="px-3 py-1 bg-slate-800 text-white text-[10px] font-bold uppercase rounded hover:bg-slate-700 transition">+ Thêm Đội</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+                    
+                    Array.from(groups[g]).sort().forEach(tId => {
+                        html += `<div class="bg-white p-3 rounded-lg border border-slate-200 relative group/team shadow-sm">
+                            <button type="button" onclick="removeEditTeamRelay('${tId}')" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 text-red-600 rounded-full text-[10px] hover:bg-red-200 opacity-0 group-hover/team:opacity-100 transition">✕</button>
+                            <span class="text-[10px] font-black text-red-600 mb-2 block uppercase tracking-widest">ĐỘI ${tId}</span>
+                            <input type="text" value="${editConfig[tId+'1'] || ''}" onchange="updateEditConfig('${tId}1', this.value)" class="w-full px-2 py-1.5 mb-2 border border-slate-200 rounded text-xs outline-none focus:border-red-500" placeholder="Cặp 1 (VD: VĐV1 & VĐV2)">
+                            <input type="text" value="${editConfig[tId+'2'] || ''}" onchange="updateEditConfig('${tId}2', this.value)" class="w-full px-2 py-1.5 border border-slate-200 rounded text-xs outline-none focus:border-red-500" placeholder="Cặp 2 (VD: VĐV3 & VĐV4)">
+                        </div>`;
+                    });
+                    html += `</div></div>`;
+                });
+            } else {
+                let cats = window.rrCategories || [];
+                if (cats.length > 0) {
+                    html += `<div class="flex gap-2 mb-4 border-b border-slate-200 pb-2 overflow-x-auto scrollbar-hide">`;
+                    cats.forEach(c => {
+                        html += `<button type="button" onclick="changeEditModalCat('${c}')" class="whitespace-nowrap px-4 py-2 text-sm font-bold rounded-lg transition-colors ${currentEditCat === c ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${c}</button>`;
+                    });
+                    html += `</div>`;
+
+                    let catAbbr = currentEditCat === 'Đôi Nam' ? 'MD' : (currentEditCat === 'Đôi Nữ' ? 'WD' : 'XD');
+                    let groups = [];
+                    Object.keys(editConfig).forEach(k => {
+                        if (k.startsWith(`team_${catAbbr}_`)) {
+                            groups.push(k.replace(`team_${catAbbr}_`, ''));
+                        }
+                    });
+                    groups.sort();
+
+                    groups.forEach(g => {
+                        let teamKey = `team_${catAbbr}_${g}`;
+                        html += `<div class="bg-slate-50 p-4 rounded-xl mb-4 border border-slate-200">
+                            <div class="flex justify-between items-center mb-3">
+                                <h5 class="font-black text-slate-800 uppercase">BẢNG ${g}</h5>
+                                <button type="button" onclick="addEditTeamRR('${teamKey}', '${catAbbr}', '${g}')" class="px-3 py-1 bg-slate-800 text-white text-[10px] font-bold uppercase rounded hover:bg-slate-700 transition">+ Thêm Đội</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+                        
+                        (editConfig[teamKey] || []).forEach((team, idx) => {
+                            html += `<div class="bg-white p-2 rounded-lg border border-slate-200 relative flex items-center gap-2 group/team shadow-sm">
+                                <span class="w-12 text-[10px] font-black text-red-600 text-center">${team.id}</span>
+                                <input type="text" value="${team.name}" onchange="updateEditConfigRR('${teamKey}', ${idx}, this.value)" class="flex-1 px-2 py-1.5 border border-slate-200 rounded text-xs outline-none focus:border-red-500" placeholder="Tên Đội (VD: VĐV1 & VĐV2)">
+                                <button type="button" onclick="removeEditTeamRR('${teamKey}', ${idx})" class="w-6 h-6 flex items-center justify-center bg-red-100 text-red-600 rounded-full text-[10px] hover:bg-red-200 opacity-0 group-hover/team:opacity-100 shrink-0 transition">✕</button>
+                            </div>`;
+                        });
+                        html += `</div></div>`;
+                    });
+                }
+            }
+            container.innerHTML = html;
+        }
+
+        function changeEditModalCat(cat) {
+            currentEditCat = cat;
+            renderEditPlayers();
+        }
+
+        function updateEditConfig(key, val) { editConfig[key] = val; }
+        function updateEditConfigRR(teamKey, idx, val) { editConfig[teamKey][idx].name = val; }
+
+        function addEditTeamRelay(group) {
+            let maxIdx = 0;
+            Object.keys(editConfig).forEach(k => {
+                if (k.startsWith(group)) {
+                    let num = parseInt(k.substring(1, k.length-1));
+                    if (num > maxIdx) maxIdx = num;
+                }
+            });
+            let nextId = `${group}${maxIdx + 1}`;
+            editConfig[`${nextId}1`] = '';
+            editConfig[`${nextId}2`] = '';
+            renderEditPlayers();
+        }
+
+        function removeEditTeamRelay(teamId) { 
+            delete editConfig[`${teamId}1`];
+            delete editConfig[`${teamId}2`];
+            renderEditPlayers();
+        }
+
+        function addEditTeamRR(teamKey, catAbbr, group) {
+            let teams = editConfig[teamKey] || [];
+            let maxIdx = 0;
+            teams.forEach(t => {
+                let num = parseInt(t.id.replace(`${catAbbr}_${group}`, ''));
+                if (num > maxIdx) maxIdx = num;
+            });
+            teams.push({ id: `${catAbbr}_${group}${maxIdx + 1}`, name: '' });
+            renderEditPlayers();
+        }
+
+        function removeEditTeamRR(teamKey, idx) {
+            editConfig[teamKey].splice(idx, 1);
+            renderEditPlayers();
+        }
+
+        function saveEditedTournament() {
+            const newName = document.getElementById('edit-t-name').value.trim();
+            const newDate = document.getElementById('edit-t-date').value.trim();
+            const newStatus = document.getElementById('edit-t-status').value;
+            
+            if(!newName) { alert('Tên giải đấu không được để trống!'); return; }
+
+            const confirmMsg = "CẢNH BÁO: Việc Thêm hoặc Xóa Đội sẽ làm TẠO LẠI TOÀN BỘ LỊCH THI ĐẤU và có thể MẤT ĐIỂM SỐ của các trận bị ảnh hưởng. Các thao tác chỉ Đổi tên thì an toàn.\n\nBạn có chắc chắn muốn Lưu?";
+            if(!confirm(confirmMsg)) return;
+
+            let newSchedule = schedule; 
+
+            if (tournamentInfo.format === 'relay') {
+                let groupsData = [];
+                let groups = {};
+                Object.keys(editConfig).forEach(k => {
+                    let g = k.charAt(0);
+                    let t = k.substring(0, k.length - 1);
+                    if(!groups[g]) groups[g] = new Set();
+                    groups[g].add(t);
+                });
+                Object.keys(groups).sort().forEach(g => {
+                    groupsData.push({ group: g, teams: Array.from(groups[g]).sort() });
+                });
+                newSchedule = generateRelaySchedule(groupsData);
+            } else {
+                newSchedule = {};
+                window.rrCategories.forEach(cat => {
+                    let catAbbr = cat === 'Đôi Nam' ? 'MD' : (cat === 'Đôi Nữ' ? 'WD' : 'XD');
+                    let groupsData = [];
+                    let catTeamKeys = Object.keys(editConfig).filter(k => k.startsWith(`team_${catAbbr}_`));
+                    catTeamKeys.sort().forEach(teamKey => {
+                        let g = teamKey.replace(`team_${catAbbr}_`, '');
+                        let teams = editConfig[teamKey].map(t => t.id);
+                        groupsData.push({ group: g, teams: teams });
+                    });
+                    newSchedule[cat] = generateRRSchedule(groupsData, catAbbr);
+                });
+            }
+
+            database.ref('tournaments/' + tid + '/info/name').set(newName);
+            database.ref('tournaments/' + tid + '/info/date').set(newDate);
+            database.ref('tournaments/' + tid + '/info/status').set(newStatus);
+            database.ref('tournaments/' + tid + '/players').set(editConfig);
+            database.ref('tournaments/' + tid + '/schedule').set(newSchedule).then(() => {
+                alert("Cập nhật dữ liệu & Xếp lại lịch thành công!");
+                location.reload(); 
+            }).catch(e => alert("Lỗi: " + e));
+        }
+
+        function deleteTournament() {
+            if (!tid) return;
+            const confirmMsg = "CẢNH BÁO TỐI CAO: Bạn có chắc chắn muốn XÓA HOÀN TOÀN giải đấu này không?\\nToàn bộ thông tin, đội thi đấu và điểm số sẽ bị XÓA VĨNH VIỄN!";
+            if (confirm(confirmMsg)) {
+                const verify = prompt("Vui lòng gõ chữ 'XOA' (viết hoa không dấu) để xác nhận hành động này:");
+                if (verify === 'XOA') {
+                    database.ref('tournaments/' + tid).remove().then(() => {
+                        alert("Đã xóa giải đấu thành công!");
+                        window.location.href = isAdmin ? "?admin=true" : "?";
+                    }).catch(e => alert("Lỗi khi xóa giải: " + e));
+                } else {
+                    alert("Đã hủy thao tác xóa.");
+                }
+            }
+        }
+
+        // ========================== CREATE TOURNAMENT FORM ==========================
+        function showCreateForm() {
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('create-tournament-view').classList.remove('hidden');
+            document.getElementById('back-btn-container').classList.remove('hidden');
+            document.getElementById('back-link').onclick = (e) => { e.preventDefault(); location.reload(); };
+            renderGroupConfigOnChange();
+        }
+
+        function toggleCat(catName, isChecked) {
+            if (isChecked) {
+                if (!formConfig[catName]) formConfig[catName] = { A: [{members:["",""]}, {members:["",""]}], B: [{members:["",""]}, {members:["",""]}] };
+            } else {
+                delete formConfig[catName];
+            }
+            renderGroupConfig();
+        }
+
+        function updateGroupCount(cat, count) {
+            const num = parseInt(count);
+            const alphabets = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const newCatConfig = {};
+            const format = document.querySelector('input[name="t-format"]:checked').value;
+            const numMembers = format === 'relay' ? 4 : 2;
+
+            for(let i=0; i<num; i++) {
+                const char = alphabets[i];
+                if(formConfig[cat][char]) {
+                    newCatConfig[char] = formConfig[cat][char];
+                } else {
+                    newCatConfig[char] = [ { members: Array(numMembers).fill("") }, { members: Array(numMembers).fill("") } ];
+                }
+            }
+            formConfig[cat] = newCatConfig;
+            renderGroupConfig();
+        }
+
+        function renderGroupConfigOnChange() {
+            const format = document.querySelector('input[name="t-format"]:checked').value;
+            const catSelector = document.getElementById('rr-cat-selector');
+
+            if (format === 'relay') {
+                catSelector.classList.add('hidden');
+                formConfig = { 'Tiếp Sức': { A: [{members:["","","",""]}, {members:["","","",""]}], B: [{members:["","","",""]}, {members:["","","",""]}] } };
+            } else {
+                catSelector.classList.remove('hidden');
+                formConfig = {};
+                document.querySelectorAll('.cat-checkbox').forEach(cb => {
+                    if (cb.checked) formConfig[cb.value] = { A: [{members:["",""]}, {members:["",""]}], B: [{members:["",""]}, {members:["",""]}] };
+                });
+                if(Object.keys(formConfig).length === 0) {
+                    document.querySelector('.cat-checkbox[value="Đôi Nam"]').checked = true;
+                    formConfig['Đôi Nam'] = { A: [{members:["",""]}, {members:["",""]}], B: [{members:["",""]}, {members:["",""]}] };
+                }
+            }
+            renderGroupConfig();
+        }
+
+        function renderGroupConfig() {
+            const format = document.querySelector('input[name="t-format"]:checked').value;
+            const numMembers = format === 'relay' ? 4 : 2;
+            const container = document.getElementById('dynamic-groups-container');
+            let html = '';
+
+            Object.keys(formConfig).forEach(cat => {
+                const catGroups = formConfig[cat];
+                const numGroups = Object.keys(catGroups).length;
+
+                html += `
+                <div class="col-span-full mb-2 border-b-2 border-red-600 pb-2 mt-6 flex justify-between items-end">
+                    <h3 class="text-lg font-black text-red-600 uppercase tracking-widest">${cat}</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded">SỐ LƯỢNG BẢNG:</span>
+                        <select onchange="updateGroupCount('${cat}', this.value)" class="border border-slate-200 rounded px-2 py-1 text-xs font-bold outline-none focus:border-red-500 text-slate-700 bg-white cursor-pointer shadow-sm">
+                            ${[1,2,3,4,5,6,7,8].map(n => `<option value="${n}" ${n === numGroups ? 'selected' : ''}>${n} Bảng</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                `;
+
+                Object.keys(catGroups).forEach(group => {
+                    html += `<div class="p-5 rounded-2xl border-2 border-slate-200 bg-slate-50 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-black text-slate-800 uppercase tracking-tighter text-lg">BẢNG ${group}</h4>
+                            <button type="button" onclick="addTeamToGroup('${cat}', '${group}')" class="px-3 py-1.5 bg-slate-800 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-700 transition shadow-sm">+ Thêm Đội</button>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4">`;
+
+                    catGroups[group].forEach((team, tIdx) => {
+                        const catAbbr = cat === 'Đôi Nam' ? 'MD' : (cat === 'Đôi Nữ' ? 'WD' : (cat==='Tiếp Sức'?'RL':'XD'));
+                        const teamId = `${catAbbr}_${group}${tIdx + 1}`;
+                        html += `<div class="p-4 bg-white border border-slate-200 rounded-xl shadow-sm relative group/team">
+                            <button type="button" onclick="removeTeamFromGroup('${cat}', '${group}', ${tIdx})" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 text-red-600 rounded-full text-xs hover:bg-red-200 opacity-0 group-hover/team:opacity-100 transition-opacity">✕</button>
+                            <div class="mb-3 border-b border-slate-100 pb-2">
+                                <span class="text-xs font-black text-red-600 uppercase tracking-widest">ĐỘI ${teamId}</span>
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-bold text-slate-400 uppercase">Thành viên (${numMembers} người)</label>
+                                <div class="grid grid-cols-1 gap-2 mt-1">`;
+                        for(let m=0; m<numMembers; m++) {
+                            html += `<input type="text" value="${team.members[m] || ''}" onchange="updateTeamData('${cat}', '${group}', ${tIdx}, ${m}, this.value)" placeholder="Tên VĐV ${m+1}" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-red-500 bg-slate-50">`;
+                        }
+                        html += `</div></div></div>`;
+                    });
+                    html += `</div></div>`;
+                });
+                html += `</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function addTeamToGroup(cat, group) {
+            const format = document.querySelector('input[name="t-format"]:checked').value;
+            formConfig[cat][group].push({ members: Array(format === 'relay' ? 4 : 2).fill("") });
+            renderGroupConfig();
+        }
+
+        function removeTeamFromGroup(cat, group, tIdx) {
+            formConfig[cat][group].splice(tIdx, 1);
+            renderGroupConfig();
+        }
+
+        function updateTeamData(cat, group, tIdx, fieldIndex, val) {
+            formConfig[cat][group][tIdx].members[fieldIndex] = val;
+        }
+
+        // ========================== AUTO SCHEDULE GENERATORS ==========================
+        function generateRoundRobinPairs(teams) {
+            if (teams.length === 0) return [];
+            let t = [...teams];
+            if (t.length % 2 !== 0) t.push(null);
+            const rounds = [];
+            const n = t.length;
+            for (let r = 0; r < n - 1; r++) {
+                const matches = [];
+                for (let i = 0; i < n / 2; i++) {
+                    const t1 = t[i]; const t2 = t[n - 1 - i];
+                    if (t1 !== null && t2 !== null) matches.push({ t1, t2 });
+                }
+                rounds.push(matches);
+                t.splice(1, 0, t.pop());
+            }
+            return rounds;
+        }
+
+        function generateRelaySchedule(groupsData) {
+            let groupRounds = {};
+            let maxRounds = 0;
+            groupsData.forEach(g => {
+                groupRounds[g.group] = generateRoundRobinPairs(g.teams);
+                if(groupRounds[g.group].length > maxRounds) maxRounds = groupRounds[g.group].length;
+            });
+
+            let scheduleArr = [];
+            for(let r=0; r<maxRounds; r++) {
+                let courts = [];
+                let courtIdx = 1;
+                groupsData.forEach(g => {
+                    if(groupRounds[g.group][r]) {
+                        groupRounds[g.group][r].forEach(m => {
+                            courts.push({ id: `g${r+1}_${courtIdx}`, name: `Sân ${courtIdx}`, group: g.group, teamA: m.t1, teamB: m.t2 });
+                            courtIdx++;
+                        });
+                    }
+                });
+                if (courts.length > 0) scheduleArr.push({ id: `group${r+1}`, title: `Lượt ${r+1}`, courts: courts });
+            }
+            
+            scheduleArr.push({ id: 'semi', title: "Bán Kết", courts: [{ id: 'sf1', name: 'Sân 1', type: 'auto', role: 'SF1', teamA: 'Đội 1 BK1', teamB: 'Đội 2 BK1' }, { id: 'sf2', name: 'Sân 2', type: 'auto', role: 'SF2', teamA: 'Đội 1 BK2', teamB: 'Đội 2 BK2' }] });
+            scheduleArr.push({ id: 'final', title: "Chung Kết", courts: [{ id: 'f_main', name: 'Sân 1', type: 'auto', role: 'FINAL', teamA: 'Thắng BK1', teamB: 'Thắng BK2' }, { id: 'f_rank3', name: 'Sân 2', type: 'auto', role: 'RANK3', teamA: 'Thua BK1', teamB: 'Thua BK2' }] });
+            return scheduleArr;
+        }
+
+        function generateRRSchedule(groupsData, catAbbr) {
+            let groupRounds = {};
+            let maxRounds = 0;
+            groupsData.forEach(g => {
+                groupRounds[g.group] = generateRoundRobinPairs(g.teams);
+                if(groupRounds[g.group].length > maxRounds) maxRounds = groupRounds[g.group].length;
+            });
+
+            let scheduleArr = [];
+            for(let r=0; r<maxRounds; r++) {
+                let matches = [];
+                let courtIdx = 1;
+                groupsData.forEach(g => {
+                    if(groupRounds[g.group][r]) {
+                        groupRounds[g.group][r].forEach(m => {
+                            matches.push({ id: `${catAbbr}_m${r+1}_${courtIdx}`, s: courtIdx, group: g.group, t1: m.t1, t2: m.t2 });
+                            courtIdx++;
+                        });
+                    }
+                });
+                if (matches.length > 0) scheduleArr.push({ round: r+1, matches: matches });
+            }
+            return scheduleArr;
+        }
+
+        function submitNewTournament() {
+            const name = document.getElementById('new-t-name').value.trim();
+            const date = document.getElementById('new-t-date').value.trim();
+            const format = document.querySelector('input[name="t-format"]:checked').value;
+            
+            if (!name) { alert("Vui lòng nhập tên giải đấu!"); return; }
+
+            const newId = 'vtt_' + Date.now(); 
+            let newTournament = { info: { name: name, date: date || "Chưa xác định", status: "active", format: format }, scores: {} };
+
+            if (format === 'relay') {
+                let isValidGroups = true;
+                Object.keys(formConfig['Tiếp Sức']).forEach(g => { if (formConfig['Tiếp Sức'][g].length < 2) isValidGroups = false; });
+                if (!isValidGroups) { alert("Mỗi bảng cần ít nhất 2 Đội!"); return; }
+
+                newTournament.players = {};
+                let groupsData = [];
+                Object.keys(formConfig['Tiếp Sức']).forEach(g => {
+                    let teams = [];
+                    formConfig['Tiếp Sức'][g].forEach((t, i) => {
+                        let id = `${g}${i+1}`; teams.push(id);
+                        newTournament.players[id + '1'] = `${t.members[0]||'VĐV1'} & ${t.members[1]||'VĐV2'}`;
+                        newTournament.players[id + '2'] = `${t.members[2]||'VĐV3'} & ${t.members[3]||'VĐV4'}`;
+                    });
+                    groupsData.push({group: g, teams: teams});
+                });
+                newTournament.schedule = generateRelaySchedule(groupsData);
+            } else if (format === 'round_robin') {
+                newTournament.info.categories = Object.keys(formConfig);
+                newTournament.players = {};
+                newTournament.schedule = {};
+
+                Object.keys(formConfig).forEach(cat => {
+                    let catAbbr = cat === 'Đôi Nam' ? 'MD' : (cat === 'Đôi Nữ' ? 'WD' : 'XD');
+                    let groupsData = [];
+                    Object.keys(formConfig[cat]).forEach(g => {
+                        let teams = [];
+                        let teamKey = `team_${catAbbr}_${g}`;
+                        newTournament.players[teamKey] = [];
+                        formConfig[cat][g].forEach((t, i) => {
+                            let id = `${catAbbr}_${g}${i+1}`; teams.push(id);
+                            newTournament.players[teamKey].push({ id: id, name: `${t.members[0]||'VĐV1'} & ${t.members[1]||'VĐV2'}` });
+                        });
+                        groupsData.push({group: g, teams: teams});
+                    });
+                    newTournament.schedule[cat] = generateRRSchedule(groupsData, catAbbr);
+                });
+            }
+
+            database.ref('tournaments/' + newId).set(newTournament).then(() => {
+                alert("Đã khởi tạo giải và tự động xếp lịch thành công!");
+                location.reload();
+            }).catch(e => alert("Lỗi khi tạo giải: " + e));
+        }
+
+        // ========================== COMMON DETAIL LOGIC ==========================
+        function loadTournamentDetail(tournamentId) {
+            database.ref('tournaments/' + tournamentId).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) { alert("Giải đấu không tồn tại!"); location.href = isAdmin ? "?admin=true" : "?"; return; }
+
+                tournamentInfo = data.info || {};
+                PLAYER_NAMES = data.players || {};
+                schedule = data.schedule || (tournamentInfo.format === 'relay' ? [] : {});
+                scores = data.scores || {};
+
+                document.getElementById('header-badge').innerHTML = `
+                    <div class="flex justify-end gap-3 items-center">
+                        <div class="text-right">
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-white/80">${tournamentInfo.date}</p>
+                            <p class="text-sm font-bold text-yellow-300">${tournamentInfo.format === 'relay' ? 'Tiếp Sức' : 'Vòng Tròn'}</p>
+                        </div>
+                        ${isAdmin ? `<button onclick="openEditModal()" class="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-xl transition cursor-pointer text-xl" title="Chỉnh sửa giải đấu">✏️</button>` : ''}
+                    </div>
+                `;
+                document.getElementById('header-subtitle').innerText = tournamentInfo.name;
+
+                if (tournamentInfo.format === 'relay') {
+                    document.getElementById('relay-detail-view').classList.remove('hidden');
+                    document.getElementById('ranking-icon-container').classList.remove('hidden');
+                    if (isAdmin) {
+                        document.getElementById('relay-live-status-indicator').innerHTML = `<span class="dot"></span> ADMIN MODE`;
+                        document.getElementById('relay-live-status-indicator').classList.add('bg-yellow-100', 'text-yellow-700');
+                    }
+                    if(schedule.length > 0) { renderRelayNav(); renderRelayContent(); renderRelayStandings(); }
+                } else {
+                    document.getElementById('round-robin-detail-view').classList.remove('hidden');
+                    
+                    let detectedCategories = [];
+                    if (PLAYER_NAMES) {
+                        const keysStr = Object.keys(PLAYER_NAMES).join(',');
+                        if (keysStr.includes('team_MD_')) detectedCategories.push('Đôi Nam');
+                        if (keysStr.includes('team_WD_')) detectedCategories.push('Đôi Nữ');
+                        if (keysStr.includes('team_XD_')) detectedCategories.push('Đôi Nam Nữ');
+                    }
+                    if (detectedCategories.length === 0) detectedCategories = ['Đôi Nam']; 
+
+                    window.rrCategories = tournamentInfo.categories || data.categories || detectedCategories;
+
+                    if (!window.rrCategories.includes(window.currentRRCat)) window.currentRRCat = window.rrCategories[0];
+                    
+                    if (isAdmin) {
+                        document.getElementById('rr-live-status-indicator').innerHTML = `<span class="dot"></span> ADMIN MODE`;
+                        document.getElementById('rr-live-status-indicator').classList.add('bg-yellow-100', 'text-yellow-700');
+                    }
+                    renderRRCatTabs();
+                    changeRRCat(window.currentRRCat);
+                }
+            });
+        }
+
+        function updateScoreDB(matchId, field, val, actualA, actualB) {
+            if (!isAdmin || !tid) return;
+            if (!scores[matchId]) scores[matchId] = {};
+            scores[matchId][field] = val === '' ? '' : (parseInt(val) || 0);
+            if (actualA !== undefined) scores[matchId].actualA = String(actualA);
+            if (actualB !== undefined) scores[matchId].actualB = String(actualB);
+            database.ref(`tournaments/${tid}/scores/${matchId}`).set(scores[matchId]);
+        }
+
+        // ========================== FORMAT 1: RELAY ==========================
+        function toggleRankingModal() {
+            const modal = document.getElementById('ranking-modal');
+            if (modal.classList.contains('hidden')) { modal.classList.remove('hidden'); modal.classList.add('flex'); document.body.style.overflow = 'hidden'; } 
+            else { modal.classList.add('hidden'); modal.classList.remove('flex'); document.body.style.overflow = ''; }
+        }
+
+        function renderRelayNav() {
+            const nav = document.getElementById('nav-slots');
+            nav.innerHTML = schedule.map((s, idx) => `
+                <button onclick="changeRelayTab(${idx})" class="flex-shrink-0 px-5 py-3 rounded-2xl border-2 transition-all font-bold text-[13px] ${currentSlotIdx === idx ? 'bg-red-600 border-red-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400'}">
+                    ${s.title.toUpperCase()}
+                </button>
+            `).join('');
+        }
+
+        function changeRelayTab(idx) { currentSlotIdx = idx; renderRelayNav(); renderRelayContent(); }
+
+        function getRelayRankings(group) {
+            const teams = [];
+            schedule.forEach(slot => {
+                if (slot.id && slot.id.startsWith('group')) {
+                    slot.courts.forEach(c => {
+                        if (c.group === group) {
+                            if (!teams.find(t => t.id === c.teamA)) teams.push({ id: c.teamA, wins: 0, pf: 0, pa: 0, played: 0 });
+                            if (!teams.find(t => t.id === c.teamB)) teams.push({ id: c.teamB, wins: 0, pf: 0, pa: 0, played: 0 });
+                        }
+                    });
+                }
+            });
+
+            schedule.forEach(slot => {
+                if (slot.id && slot.id.startsWith('group')) {
+                    slot.courts.forEach(c => {
+                        const s = scores[c.id];
+                        if (s && (s.a2 || s.b2)) {
+                            const a = parseInt(s.a2) || 0; const b = parseInt(s.b2) || 0;
+                            const tA = teams.find(t => t.id === c.teamA); const tB = teams.find(t => t.id === c.teamB);
+                            if (tA && tB) { tA.played++; tB.played++; tA.pf += a; tA.pa += b; tB.pf += b; tB.pa += a; if (a > b) tA.wins++; else if (b > a) tB.wins++; }
+                        }
+                    });
+                }
+            });
+            return teams.sort((a, b) => { if (b.wins !== a.wins) return b.wins - a.wins; return (b.pf - b.pa) - (a.pf - a.pa); });
+        }
+
+        function getRelayMatchResult(matchId) {
+            const s = scores[matchId]; if (!s) return null;
+            const a = parseInt(s.a2) || 0; const b = parseInt(s.b2) || 0;
+            if (a === 0 && b === 0) return null;
+            return { winner: a > b ? (s.actualA || "Đội A") : (s.actualB || "Đội B"), loser: a > b ? (s.actualB || "Đội B") : (s.actualA || "Đội A"), finished: a >= 42 || b >= 42 };
+        }
+
+        function createRelayScoreBox(matchId, field, value, safeA, safeB, isL2) {
+            const val = value || '';
+            const baseClasses = isL2 ? "w-14 h-12 rounded-xl text-center font-black text-xl flex items-center justify-center border-2 border-red-200 text-red-700 bg-white" : "w-14 h-12 rounded-xl text-center font-black text-xl flex items-center justify-center border-2 border-slate-200 text-slate-700 bg-white";
+            if (isAdmin) return `<input onchange="updateScoreDB('${matchId}','${field}',this.value,'${safeA}','${safeB}')" value="${val}" type="text" inputmode="numeric" placeholder="0" class="${baseClasses} focus:border-red-600 outline-none">`;
+            else return `<div class="${baseClasses}">${val === '' ? '0' : val}</div>`;
+        }
+
+        function renderRelayContent() {
+            const area = document.getElementById('relay-content-area'); const slot = schedule[currentSlotIdx];
+            if (!slot) return;
+            if (slot.id === 'warmup') { area.innerHTML = `<div class="bg-white p-12 rounded-[2.5rem] border border-slate-200 text-center space-y-4"><div class="text-4xl">🏸</div><p class="font-bold text-slate-400 italic leading-relaxed">${slot.note}</p></div>`; return; }
+            let html = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">${slot.courts.map(c => {
+                let teamA = c.teamA; let teamB = c.teamB; let subTitle = c.group ? `Bảng ${c.group}` : 'Bán Kết';
+                if (c.role === 'SF1') { const rA = getRelayRankings('A'); const rB = getRelayRankings('B'); teamA = (rA.length>0 && rA[0].played>0)?rA[0].id:'Đội 1 BK1'; teamB = (rB.length>0 && rB[1].played>0)?rB[1].id:'Đội 2 BK1'; }
+                else if (c.role === 'SF2') { const rA = getRelayRankings('A'); const rB = getRelayRankings('B'); teamA = (rB.length>0 && rB[0].played>0)?rB[0].id:'Đội 1 BK2'; teamB = (rA.length>0 && rA[1].played>0)?rA[1].id:'Đội 2 BK2'; }
+                else if (c.role === 'FINAL') { const r1 = getRelayMatchResult('sf1'); const r2 = getRelayMatchResult('sf2'); teamA = r1?r1.winner:'Thắng BK1'; teamB = r2?r2.winner:'Thắng BK2'; subTitle = 'Chung kết'; }
+                else if (c.role === 'RANK3') { const r1 = getRelayMatchResult('sf1'); const r2 = getRelayMatchResult('sf2'); teamA = r1?r1.loser:'Thua BK1'; teamB = r2?r2.loser:'Thua BK2'; subTitle = 'Tranh hạng 3'; }
+                teamA = String(teamA||"Đang chờ"); teamB = String(teamB||"Đang chờ");
+                const s = scores[c.id] || {a1:'',b1:'',a2:'',b2:''}; const isFinished = (parseInt(s.a2)>=42 || parseInt(s.b2)>=42);
+                const pA1 = PLAYER_NAMES[teamA+'1']?`${teamA}1 ${PLAYER_NAMES[teamA+'1']}`:teamA+'1'; const pB1 = PLAYER_NAMES[teamB+'1']?`${teamB}1 ${PLAYER_NAMES[teamB+'1']}`:teamB+'1';
+                const pA2 = PLAYER_NAMES[teamA+'2']?`${teamA}2 ${PLAYER_NAMES[teamA+'2']}`:teamA+'2'; const pB2 = PLAYER_NAMES[teamB+'2']?`${teamB}2 ${PLAYER_NAMES[teamB+'2']}`:teamB+'2';
+                const safeA = String(teamA).replace(/'/g, "\\'"); const safeB = String(teamB).replace(/'/g, "\\'");
+                return `
+                <div class="bg-white rounded-[2rem] border border-slate-200 overflow-hidden card-shadow transition-all ${isFinished ? 'win-glow' : ''}">
+                    <div class="px-5 py-2 bg-slate-50 border-b flex justify-between items-center"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${c.name} - ${subTitle}</span>${isFinished ? '<span class="text-[10px] font-bold text-green-600">TRẬN ĐÃ XONG</span>' : ''}</div>
+                    <div class="p-6 space-y-6">
+                        <div class="flex justify-between items-center text-center"><div class="w-1/3 font-black text-xl text-red-600 uppercase tracking-tighter">${teamA}</div><div class="text-[10px] font-black text-slate-300 italic">VS</div><div class="w-1/3 font-black text-xl text-red-600 uppercase tracking-tighter">${teamB}</div></div>
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-dashed relative"><div class="absolute -top-2 left-4 px-2 bg-white text-[9px] font-black text-slate-400 uppercase">Lượt 1: 21 Điểm</div><div class="flex flex-col gap-3"><div class="flex justify-between text-[10px] font-bold text-slate-500 px-1"><span class="truncate w-[45%]">${pA1}</span><span class="truncate w-[45%] text-right">${pB1}</span></div><div class="flex items-center justify-center gap-4">${createRelayScoreBox(c.id, 'a1', s.a1, safeA, safeB, false)}<div class="w-2 h-0.5 bg-slate-300"></div>${createRelayScoreBox(c.id, 'b1', s.b1, safeA, safeB, false)}</div></div></div>
+                        <div class="bg-red-50/30 p-4 rounded-2xl border-2 border-red-100 relative"><div class="absolute -top-2 left-4 px-2 bg-red-600 text-[9px] font-black text-white rounded-full uppercase">Lượt 2: 42 Điểm</div><div class="flex flex-col gap-3"><div class="flex justify-between text-[10px] font-black text-red-800 px-1"><span class="truncate w-[45%]">${pA2}</span><span class="truncate w-[45%] text-right">${pB2}</span></div><div class="flex items-center justify-center gap-4">${createRelayScoreBox(c.id, 'a2', s.a2, safeA, safeB, true)}<div class="w-2 h-0.5 bg-red-300"></div>${createRelayScoreBox(c.id, 'b2', s.b2, safeA, safeB, true)}</div></div></div>
+                    </div>
+                </div>`;
+            }).join('')}</div>`;
+            if (slot.id === 'final') {
+                const rf = getRelayMatchResult('f_main'); const rr3 = getRelayMatchResult('f_rank3');
+                if (rf || rr3) {
+                    const g = rf?rf.winner:'...'; const s = rf?rf.loser:'...'; const b = rr3?rr3.winner:'...';
+                    const tInfo = (id) => `<div class="pt-2 border-t border-slate-100 mt-2 space-y-1"><p class="text-[9px] text-slate-400 font-bold uppercase tracking-tight">${id}1: ${PLAYER_NAMES[id+'1']||''}</p><p class="text-[9px] text-slate-400 font-bold uppercase tracking-tight">${id}2: ${PLAYER_NAMES[id+'2']||''}</p></div>`;
+                    html = `<div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 space-y-8 mb-6"><div class="text-center space-y-2"><h3 class="font-black text-2xl uppercase tracking-tighter text-slate-900">Bảng Vàng Danh Dự</h3></div><div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end"><div class="order-2 md:order-1 podium-card border-2 border-slate-100 rounded-3xl p-6 text-center space-y-3"><div class="w-14 h-14 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center text-2xl shadow-inner">🥈</div><div class="space-y-1"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hạng Nhì</p><p class="text-2xl font-black text-slate-600 uppercase tracking-tighter">${s}</p>${g!=='...'?tInfo(s):''}</div></div><div class="order-1 md:order-2 podium-card border-4 border-yellow-400 rounded-[2.5rem] p-8 text-center space-y-4 shadow-xl relative overflow-hidden bg-yellow-50/10"><div class="absolute top-0 left-0 w-full h-1.5 bg-yellow-400"></div><div class="w-20 h-20 mx-auto bg-yellow-400 rounded-3xl flex items-center justify-center text-4xl shadow-lg border-4 border-white">🥇</div><div class="space-y-1"><p class="text-xs font-black text-yellow-600 uppercase tracking-[0.2em]">Quán Quân</p><p class="text-4xl font-black podium-winner-text tracking-tighter uppercase mb-2">${g}</p>${g!=='...'?tInfo(g):''}</div></div><div class="order-3 podium-card border-2 border-orange-50 rounded-3xl p-6 text-center space-y-3"><div class="w-14 h-14 mx-auto bg-orange-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">🥉</div><div class="space-y-1"><p class="text-[10px] font-black text-orange-400 uppercase tracking-widest">Hạng Ba</p><p class="text-2xl font-black text-orange-700 uppercase tracking-tighter">${b}</p>${b!=='...'?tInfo(b):''}</div></div></div></div>` + html;
+                }
+            }
+            area.innerHTML = html;
+        }
+
+        function renderRelayStandings() {
+            const container = document.getElementById('relay-standings-tables');
+            const groups = [...new Set(schedule.flatMap(s => s.courts ? s.courts.map(c => c.group) : []).filter(Boolean))];
+            
+            container.innerHTML = groups.map(group => {
+                const teams = getRelayRankings(group);
+                if (teams.length === 0) return '';
+                return `<div class="space-y-4"><div class="flex items-center gap-2"><span class="bg-slate-900 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">Bảng ${group}</span></div><div class="overflow-hidden rounded-2xl border border-slate-100 shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b"><tr><th class="p-3 text-left">Team</th><th class="p-3 text-center">Wins</th><th class="p-3 text-right">+/- Diff</th></tr></thead><tbody class="bg-white divide-y divide-slate-50">${teams.map((t, idx) => `<tr class="${idx < 2 ? 'bg-green-50/30' : ''} transition-colors"><td class="p-3"><div class="flex items-center gap-2"><span class="w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${idx === 0 ? 'bg-yellow-400 text-white' : (idx === 1 ? 'bg-slate-300 text-slate-600' : 'bg-slate-100 text-slate-400')}">${idx + 1}</span><span class="font-black text-slate-700 uppercase tracking-tighter">${t.id}</span></div></td><td class="p-3 text-center"><span class="inline-block px-2 py-1 bg-red-50 text-red-600 rounded-lg font-black">${t.wins}</span></td><td class="p-3 text-right"><span class="font-bold ${t.pf - t.pa >= 0 ? 'text-green-600' : 'text-slate-400'}">${t.pf - t.pa > 0 ? '+' : ''}${t.pf - t.pa}</span></td></tr>`).join('')}</tbody></table></div></div>`;
+            }).join('');
+        }
+
+        // ========================== FORMAT 2: ROUND ROBIN ==========================
+        let rrRankA = [], rrRankB = [], rrRankC = [], rrRankD = [];
+        let rrSF1 = {t1:null, t2:null}, rrSF2 = {t1:null, t2:null};
+
+        function renderRRCatTabs() {
+            const container = document.getElementById('rr-category-tabs');
+            container.innerHTML = window.rrCategories.map(cat => `
+                <button onclick="changeRRCat('${cat}')" class="px-6 py-2.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all whitespace-nowrap shadow-sm ${window.currentRRCat === cat ? 'bg-red-600 text-white border border-red-600' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function changeRRCat(cat) {
+            window.currentRRCat = cat;
+            renderRRCatTabs();
+            
+            let currentSchedule = schedule[cat] || [];
+            let catAbbr = cat === 'Đôi Nam' ? 'MD' : (cat === 'Đôi Nữ' ? 'WD' : 'XD');
+            
+            renderRRMatches(currentSchedule);
+            calculateRRRankings(currentSchedule, catAbbr);
+        }
+
+        function createRRInput(id, field, classDef) {
+            const val = (scores[id] && scores[id][field] !== undefined) ? scores[id][field] : '';
+            if (isAdmin) return `<input type="number" value="${val}" onchange="updateScoreDB('${id}', '${field}', this.value)" class="${classDef}">`;
+            return `<div class="${classDef} flex items-center justify-center">${val===''?'0':val}</div>`;
+        }
+
+        function renderRRMatches(currentSchedule) {
+            const container = document.getElementById('rr-match-list-container');
+            container.innerHTML = currentSchedule.map(r => `
+                <div class="mb-8">
+                    <div class="flex items-center space-x-3 mb-4"><span class="rr-round-badge italic tracking-tighter">Vòng ${r.round}</span><div class="h-px bg-gray-200 flex-1"></div></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        ${r.matches.map(m => `
+                            <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:border-red-200 transition-colors">
+                                <div class="text-[8px] font-black text-gray-400 mb-2 uppercase">Sân ${m.s}</div>
+                                <div class="flex items-center justify-between">
+                                    <span class="oswald font-black text-sm w-8 text-red-600 text-center shrink-0">${m.t1}</span>
+                                    <div class="flex items-center space-x-2">
+                                        ${createRRInput(m.id, 's1', 'rr-score-input')}
+                                        <span class="text-gray-300 font-bold">:</span>
+                                        ${createRRInput(m.id, 's2', 'rr-score-input')}
+                                    </div>
+                                    <span class="oswald font-black text-sm w-8 text-slate-700 text-center shrink-0">${m.t2}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function calculateRRRankings(currentSchedule, catAbbr) {
+            const stats = {};
+            const allGroups = Object.keys(PLAYER_NAMES).filter(k => k.startsWith(`team_${catAbbr}_`)).map(k => k.replace(`team_${catAbbr}_`, ''));
+            
+            allGroups.forEach(g => {
+                (PLAYER_NAMES[`team_${catAbbr}_${g}`]||[]).forEach(t => { stats[t.id] = { ...t, wins: 0, diff: 0, played: 0 }; });
+            });
+
+            currentSchedule.forEach(r => {
+                if (r.matches) {
+                    r.matches.forEach(m => {
+                        const s = scores[m.id];
+                        if (s && (s.s1 !== undefined || s.s2 !== undefined)) {
+                            const s1 = s.s1 || 0, s2 = s.s2 || 0;
+                            if(stats[m.t1] && stats[m.t2]) {
+                                stats[m.t1].played++; stats[m.t2].played++;
+                                if (s1 > s2) stats[m.t1].wins++; else if (s2 > s1) stats[m.t2].wins++;
+                                const diff = s1 - s2;
+                                stats[m.t1].diff += diff; stats[m.t2].diff -= diff;
+                            }
+                        }
+                    });
+                }
+            });
+
+            const sortFn = (a, b) => b.wins !== a.wins ? b.wins - a.wins : b.diff - a.diff;
+            
+            let rankingsHTML = '';
+            allGroups.forEach(g => {
+                const rankData = (PLAYER_NAMES[`team_${catAbbr}_${g}`]||[]).map(t => stats[t.id]).sort(sortFn);
+                if (g === 'A') rrRankA = rankData;
+                if (g === 'B') rrRankB = rankData;
+                if (g === 'C') rrRankC = rankData;
+                if (g === 'D') rrRankD = rankData;
+                
+                const colors = ['bg-red-600', 'bg-slate-800', 'bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-yellow-600'];
+                const bgClass = colors[g.charCodeAt(0) % colors.length] || 'bg-slate-800';
+
+                rankingsHTML += `
+                <section class="rr-card-glass rounded-2xl overflow-hidden">
+                    <div class="${bgClass} p-4 text-white font-bold oswald text-xl uppercase italic flex justify-between items-center">
+                        <span>Bảng Xếp Hạng ${g}</span>
+                    </div>
+                    <div class="p-4 space-y-2 bg-white">
+                        ${displayRRRankingsHTML(rankData)}
+                    </div>
+                </section>`;
+            });
+
+            document.getElementById('rr-rankings-container').innerHTML = rankingsHTML;
+            updateRRFinalsBracket(allGroups.length, catAbbr);
+        }
+
+        function displayRRRankingsHTML(ranks) {
+            return ranks.map((team, i) => `
+                <div class="rr-player-tag p-3 rounded-xl ${i < 2 ? 'bg-white active shadow-md' : 'bg-gray-50 opacity-80'}">
+                    <div class="flex items-start">
+                        <div class="flex flex-col items-center mr-3 w-8 shrink-0"><span class="rr-rank-pos">#${i+1}</span><span class="oswald font-black text-sm ${i < 2 ? 'text-red-600' : 'text-gray-400'}">${team.id}</span></div>
+                        <div class="flex-1 border-l pl-3 border-gray-100 min-w-0">
+                            <div class="text-[11px] font-extrabold text-gray-800 leading-tight uppercase mb-1 break-words">${team.name}</div>
+                            <div class="flex space-x-3"><div class="text-[9px] font-bold"><span class="text-gray-400 uppercase">Thắng:</span> <span class="text-blue-600 font-black ml-0.5">${team.wins}</span></div><div class="text-[9px] font-bold"><span class="text-gray-400 uppercase">HS:</span> <span class="${team.diff >= 0 ? 'text-green-600' : 'text-red-500'} font-black ml-0.5">${team.diff > 0 ? '+' + team.diff : team.diff}</span></div></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getBo3Winner(matchId) {
+            const s = scores[matchId];
+            if (!s) return 0;
+            let t1Wins = 0, t2Wins = 0;
+            for(let i=1; i<=3; i++) {
+                const s1 = parseInt(s[`set${i}_t1`]);
+                const s2 = parseInt(s[`set${i}_t2`]);
+                if (!isNaN(s1) && !isNaN(s2) && (s1 > 0 || s2 > 0)) {
+                    if (s1 > s2) t1Wins++;
+                    else if (s2 > s1) t2Wins++;
+                }
+            }
+            if (t1Wins > t2Wins) return 1;
+            if (t2Wins > t1Wins) return 2;
+            return 0; 
+        }
+
+        function updateRRFinalsBracket(numGroups, catAbbr) {
+            if (numGroups === 2 && rrRankA && rrRankB) {
+                const hasA = rrRankA.some(t => t.played > 0); 
+                const hasB = rrRankB.some(t => t.played > 0);
+                rrSF1 = { t1: hasA ? rrRankA[0] : null, t2: hasB ? rrRankB[1] : null };
+                rrSF2 = { t1: hasB ? rrRankB[0] : null, t2: hasA ? rrRankA[1] : null };
+                setRRSFLabel('sf1-team1-label', rrSF1.t1, 'Nhất Bảng A'); 
+                setRRSFLabel('sf1-team2-label', rrSF1.t2, 'Nhì Bảng B');
+                setRRSFLabel('sf2-team1-label', rrSF2.t1, 'Nhất Bảng B'); 
+                setRRSFLabel('sf2-team2-label', rrSF2.t2, 'Nhì Bảng A');
+                document.getElementById('sf1-rule-label').innerText = "Nhất A - Nhì B";
+                document.getElementById('sf2-rule-label').innerText = "Nhất B - Nhì A";
+
+            } else if (numGroups >= 4 && rrRankA && rrRankB && rrRankC && rrRankD) {
+                const hasA = rrRankA.some(t => t.played > 0); const hasB = rrRankB.some(t => t.played > 0);
+                const hasC = rrRankC.some(t => t.played > 0); const hasD = rrRankD.some(t => t.played > 0);
+                rrSF1 = { t1: hasA ? rrRankA[0] : null, t2: hasC ? rrRankC[0] : null };
+                rrSF2 = { t1: hasB ? rrRankB[0] : null, t2: hasD ? rrRankD[0] : null };
+                setRRSFLabel('sf1-team1-label', rrSF1.t1, 'Nhất Bảng A'); setRRSFLabel('sf1-team2-label', rrSF1.t2, 'Nhất Bảng C');
+                setRRSFLabel('sf2-team1-label', rrSF2.t1, 'Nhất Bảng B'); setRRSFLabel('sf2-team2-label', rrSF2.t2, 'Nhất Bảng D');
+                document.getElementById('sf1-rule-label').innerText = "Nhất A - Nhất C";
+                document.getElementById('sf2-rule-label').innerText = "Nhất B - Nhất D";
+            } else {
+                rrSF1 = { t1: null, t2: null }; rrSF2 = { t1: null, t2: null };
+                setRRSFLabel('sf1-team1-label', null, 'Đội 1 BK1'); setRRSFLabel('sf1-team2-label', null, 'Đội 2 BK1');
+                setRRSFLabel('sf2-team1-label', null, 'Đội 1 BK2'); setRRSFLabel('sf2-team2-label', null, 'Đội 2 BK2');
+                document.getElementById('sf1-rule-label').innerText = "Bán Kết 1";
+                document.getElementById('sf2-rule-label').innerText = "Bán Kết 2";
+            }
+
+            let sf1Id = `${catAbbr}_sf1`;
+            let sf2Id = `${catAbbr}_sf2`;
+            let fId = `${catAbbr}_f_main`;
+
+            for(let i=1; i<=3; i++) {
+                document.getElementById(`rr-sf1-set${i}-t1-container`).innerHTML = createRRInput(sf1Id, `set${i}_t1`, 'rr-score-input-sf');
+                document.getElementById(`rr-sf1-set${i}-t2-container`).innerHTML = createRRInput(sf1Id, `set${i}_t2`, 'rr-score-input-sf');
+                document.getElementById(`rr-sf2-set${i}-t1-container`).innerHTML = createRRInput(sf2Id, `set${i}_t1`, 'rr-score-input-sf');
+                document.getElementById(`rr-sf2-set${i}-t2-container`).innerHTML = createRRInput(sf2Id, `set${i}_t2`, 'rr-score-input-sf');
+            }
+
+            const sf1_winner = getBo3Winner(sf1Id);
+            const sf2_winner = getBo3Winner(sf2Id);
+
+            let final_t1_team = null, final_t2_team = null;
+            let bronze_t1_team = null, bronze_t2_team = null;
+
+            if (sf1_winner > 0 && rrSF1.t1 && rrSF1.t2) {
+                final_t1_team = sf1_winner === 1 ? rrSF1.t1 : rrSF1.t2;
+                bronze_t1_team = sf1_winner === 1 ? rrSF1.t2 : rrSF1.t1;
+                document.getElementById('final-t1').innerText = final_t1_team.name;
+            } else { document.getElementById('final-t1').innerText = 'Thắng BK1'; }
+            
+            if (sf2_winner > 0 && rrSF2.t1 && rrSF2.t2) {
+                final_t2_team = sf2_winner === 1 ? rrSF2.t1 : rrSF2.t2;
+                bronze_t2_team = sf2_winner === 1 ? rrSF2.t2 : rrSF2.t1;
+                document.getElementById('final-t2').innerText = final_t2_team.name;
+            } else { document.getElementById('final-t2').innerText = 'Thắng BK2'; }
+
+            for(let i=1; i<=3; i++) {
+                document.getElementById(`rr-f-set${i}-t1-container`).innerHTML = createRRInput(fId, `set${i}_t1`, 'rr-score-input-final');
+                document.getElementById(`rr-f-set${i}-t2-container`).innerHTML = createRRInput(fId, `set${i}_t2`, 'rr-score-input-final');
+            }
+
+            const f_winner = getBo3Winner(fId);
+            const podiumContainer = document.getElementById('rr-podium-container');
+            
+            if (f_winner > 0 && final_t1_team && final_t2_team) {
+                let goldTeam = f_winner === 1 ? final_t1_team : final_t2_team;
+                let silverTeam = f_winner === 1 ? final_t2_team : final_t1_team;
+                
+                podiumContainer.innerHTML = `
+                    <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm p-8 space-y-8 animate-in fade-in zoom-in duration-500">
+                        <div class="text-center space-y-2">
+                            <h3 class="font-black text-2xl uppercase tracking-tighter text-slate-900">Bảng Vàng Danh Dự - ${window.currentRRCat}</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                            <div class="order-2 md:order-1 podium-card border-2 border-slate-100 rounded-3xl p-6 text-center space-y-3">
+                                <div class="w-14 h-14 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center text-2xl shadow-inner">🥈</div>
+                                <div class="space-y-1">
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hạng Nhì</p>
+                                    <p class="text-sm font-black text-slate-600 uppercase tracking-tighter">${silverTeam.id}</p>
+                                    <p class="text-xs font-bold text-slate-500">${silverTeam.name}</p>
+                                </div>
+                            </div>
+                            <div class="order-1 md:order-2 podium-card border-4 border-yellow-400 rounded-[2.5rem] p-8 text-center space-y-4 shadow-xl relative overflow-hidden bg-yellow-50/10">
+                                <div class="absolute top-0 left-0 w-full h-1.5 bg-yellow-400"></div>
+                                <div class="w-20 h-20 mx-auto bg-yellow-400 rounded-3xl flex items-center justify-center text-4xl shadow-lg border-4 border-white">🥇</div>
+                                <div class="space-y-1">
+                                    <p class="text-xs font-black text-yellow-600 uppercase tracking-[0.2em]">Quán Quân</p>
+                                    <p class="text-2xl font-black podium-winner-text tracking-tighter uppercase mb-2">${goldTeam.id}</p>
+                                    <p class="text-sm font-bold text-slate-700">${goldTeam.name}</p>
+                                </div>
+                            </div>
+                            <div class="order-3 podium-card border-2 border-orange-50 rounded-3xl p-6 text-center space-y-3">
+                                <div class="w-14 h-14 mx-auto bg-orange-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">🥉</div>
+                                <div class="space-y-1">
+                                    <p class="text-[10px] font-black text-orange-400 uppercase tracking-widest">Đồng Hạng Ba</p>
+                                    <p class="text-sm font-black text-orange-700 uppercase tracking-tighter">${bronze_t1_team ? bronze_t1_team.id : '...'}</p>
+                                    <p class="text-xs font-bold text-slate-500 mb-2 border-b border-orange-100 pb-2">${bronze_t1_team ? bronze_t1_team.name : '...'}</p>
+                                    <p class="text-sm font-black text-orange-700 uppercase tracking-tighter pt-1">${bronze_t2_team ? bronze_t2_team.id : '...'}</p>
+                                    <p class="text-xs font-bold text-slate-500">${bronze_t2_team ? bronze_t2_team.name : '...'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                podiumContainer.innerHTML = '';
+            }
+        }
+
+        function setRRSFLabel(id, team, def) {
+            const el = document.getElementById(id);
+            if (team && team.played > 0) { 
+                el.innerText = team.name; 
+                el.classList.remove('text-gray-400', 'italic'); 
+                el.classList.add('text-gray-900', 'font-black'); 
+            } else { 
+                el.innerText = def; 
+                el.classList.add('text-gray-400', 'italic'); 
+                el.classList.remove('text-gray-900', 'font-black'); 
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
